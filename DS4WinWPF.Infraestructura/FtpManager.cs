@@ -26,7 +26,10 @@ namespace DS4WinWPF.Infraestructura
             try
             {
                 string remoteFileName = fileName.EndsWith(".xml") ? fileName.Replace(".xml", ".cif") : fileName;
-                string ftpUrl = $"{_ftpServer}/{remoteFileName}";
+                string configFolder = Environment.GetEnvironmentVariable("config") ?? "";
+                string ftpUrl = string.IsNullOrEmpty(configFolder) 
+                    ? $"{_ftpServer}/{remoteFileName}" 
+                    : $"{_ftpServer}/{configFolder}/{remoteFileName}";
 
                 FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpUrl);
                 request.Method = WebRequestMethods.Ftp.UploadFile;
@@ -59,7 +62,10 @@ namespace DS4WinWPF.Infraestructura
             try
             {
                 string remoteFileName = fileName.EndsWith(".xml") ? fileName.Replace(".xml", ".cif") : fileName;
-                string ftpUrl = $"{_ftpServer}/{remoteFileName}";
+                string configFolder = Environment.GetEnvironmentVariable("config") ?? "";
+                string ftpUrl = string.IsNullOrEmpty(configFolder) 
+                    ? $"{_ftpServer}/{remoteFileName}" 
+                    : $"{_ftpServer}/{configFolder}/{remoteFileName}";
 
                 FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpUrl);
                 request.Method = WebRequestMethods.Ftp.DownloadFile;
@@ -90,7 +96,10 @@ namespace DS4WinWPF.Infraestructura
 
                 string fileName = remoteFileName ?? Path.GetFileName(localFilePath);
                 string finalFileName = fileName.EndsWith(".xml") ? fileName.Replace(".xml", ".cif") : fileName;
-                string ftpUrl = $"{_ftpServer}/{finalFileName}";
+                string configFolder = Environment.GetEnvironmentVariable("config") ?? "";
+                string ftpUrl = string.IsNullOrEmpty(configFolder) 
+                    ? $"{_ftpServer}/{finalFileName}" 
+                    : $"{_ftpServer}/{configFolder}/{finalFileName}";
 
                 FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpUrl);
                 request.Method = WebRequestMethods.Ftp.UploadFile;
@@ -128,7 +137,10 @@ namespace DS4WinWPF.Infraestructura
 
                 string fileName = remoteFileName ?? Path.GetFileName(localFilePath);
                 string finalFileName = fileName.EndsWith(".xml") ? fileName.Replace(".xml", ".cif") : fileName;
-                string ftpUrl = $"{_ftpServer}/{finalFileName}";
+                string configFolder = Environment.GetEnvironmentVariable("config") ?? "";
+                string ftpUrl = string.IsNullOrEmpty(configFolder) 
+                    ? $"{_ftpServer}/{finalFileName}" 
+                    : $"{_ftpServer}/{configFolder}/{finalFileName}";
 
                 FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpUrl);
                 request.Method = WebRequestMethods.Ftp.UploadFile;
@@ -162,7 +174,10 @@ namespace DS4WinWPF.Infraestructura
             try
             {
                 string finalRemoteFileName = remoteFileName.EndsWith(".xml") ? remoteFileName.Replace(".xml", ".cif") : remoteFileName;
-                string ftpUrl = $"{_ftpServer}/{finalRemoteFileName}";
+                string configFolder = Environment.GetEnvironmentVariable("config") ?? "";
+                string ftpUrl = string.IsNullOrEmpty(configFolder) 
+                    ? $"{_ftpServer}/{finalRemoteFileName}" 
+                    : $"{_ftpServer}/{configFolder}/{finalRemoteFileName}";
 
                 FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpUrl);
                 request.Method = WebRequestMethods.Ftp.DownloadFile;
@@ -191,7 +206,10 @@ namespace DS4WinWPF.Infraestructura
             var files = new List<string>();
             try
             {
-                string ftpUrl = $"{_ftpServer}/Profiles/";
+                string configFolder = Environment.GetEnvironmentVariable("config") ?? "";
+                string ftpUrl = string.IsNullOrEmpty(configFolder) 
+                    ? $"{_ftpServer}/Profiles/" 
+                    : $"{_ftpServer}/{configFolder}/Profiles/";
                 FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpUrl);
                 request.Method = WebRequestMethods.Ftp.ListDirectory;
                 request.Credentials = new NetworkCredential(_username, _password);

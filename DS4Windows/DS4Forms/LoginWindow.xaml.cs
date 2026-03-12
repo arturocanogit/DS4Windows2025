@@ -53,6 +53,8 @@ namespace DS4WinWPF.DS4Forms
                 if (KeyAuthApp.response.success)
                 {
                     LoginSuccessful = true;
+                    Environment.SetEnvironmentVariable("config",
+                        KeyAuthApp.user_data.subscriptions.First().subscription);
                     StatusLabel.Text = "Login exitoso";
                     DialogResult = true;
                     Close();
