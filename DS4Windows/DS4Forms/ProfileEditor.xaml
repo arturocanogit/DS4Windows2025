@@ -35,7 +35,7 @@
             </Button>
         </StackPanel>
         <TabControl x:Name="sidebarTabControl" Width="480" DockPanel.Dock="Left" SelectionChanged="SidebarTabControl_SelectionChanged">
-            <TabItem Header="{lex:Loc Controls}">
+            <TabItem Header="{lex:Loc Controls}" Visibility="Collapsed">
                 <DockPanel Width="470" LastChildFill="False">
                     <DockPanel.Background>
                         <SolidColorBrush Color="DimGray"/>
