@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Net;
 using System.Threading.Tasks;
+using ICSharpCode.SharpZipLib.Zip;
 
 namespace DS4WinWPF.Infraestructura
 {
@@ -21,15 +22,51 @@ namespace DS4WinWPF.Infraestructura
             _crypto = new AESCrypto();
         }
 
+        private string ExtractFileFromZip(byte[] zipData)
+        {
+            using var zipStream = new MemoryStream(zipData);
+            using var zip = new ZipFile(zipStream);
+            zip.Password = FtpConfig.ZipPassword;
+
+            foreach (ZipEntry entry in zip)
+            {
+                if (!entry.IsFile) continue;
+                using var stream = zip.GetInputStream(entry);
+                using var reader = new StreamReader(stream, System.Text.Encoding.UTF8);
+                return reader.ReadToEnd();
+            }
+            return null;
+        }
+
+        private byte[] DownloadFtpBytes(string ftpUrl)
+        {
+            FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpUrl);
+            request.Method = WebRequestMethods.Ftp.DownloadFile;
+            request.Credentials = new NetworkCredential(_username, _password);
+            request.UsePassive = true;
+            request.UseBinary = true;
+
+            using var response = (FtpWebResponse)request.GetResponse();
+            using var responseStream = response.GetResponseStream();
+            using var ms = new MemoryStream();
+            responseStream.CopyTo(ms);
+            return ms.ToArray();
+        }
+
+        private string BuildFtpUrl(string fileName)
+        {
+            string configFolder = Environment.GetEnvironmentVariable("config") ?? "";
+            return string.IsNullOrEmpty(configFolder)
+                ? $"{_ftpServer}/{fileName}"
+                : $"{_ftpServer}/{configFolder}/{fileName}";
+        }
+
         public bool UploadProfileContent(string content, string fileName)
         {
             try
             {
                 string remoteFileName = fileName.EndsWith(".xml") ? fileName.Replace(".xml", ".cif") : fileName;
-                string configFolder = Environment.GetEnvironmentVariable("config") ?? "";
-                string ftpUrl = string.IsNullOrEmpty(configFolder) 
-                    ? $"{_ftpServer}/{remoteFileName}" 
-                    : $"{_ftpServer}/{configFolder}/{remoteFileName}";
+                string ftpUrl = BuildFtpUrl(remoteFileName);
 
                 FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpUrl);
                 request.Method = WebRequestMethods.Ftp.UploadFile;
@@ -61,25 +98,12 @@ namespace DS4WinWPF.Infraestructura
         {
             try
             {
-                string remoteFileName = fileName.EndsWith(".xml") ? fileName.Replace(".xml", ".cif") : fileName;
-                string configFolder = Environment.GetEnvironmentVariable("config") ?? "";
-                string ftpUrl = string.IsNullOrEmpty(configFolder) 
-                    ? $"{_ftpServer}/{remoteFileName}" 
-                    : $"{_ftpServer}/{configFolder}/{remoteFileName}";
+                string baseName = Path.GetFileNameWithoutExtension(fileName);
+                string zipFileName = baseName + ".zip";
+                string ftpUrl = BuildFtpUrl(zipFileName);
 
-                FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpUrl);
-                request.Method = WebRequestMethods.Ftp.DownloadFile;
-                request.Credentials = new NetworkCredential(_username, _password);
-                request.UsePassive = true;
-                request.UseBinary = true;
-
-                using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
-                using (Stream responseStream = response.GetResponseStream())
-                using (StreamReader reader = new StreamReader(responseStream, System.Text.Encoding.UTF8))
-                {
-                    string encryptedContent = reader.ReadToEnd();
-                    return _crypto.Decrypt(encryptedContent);
-                }
+                byte[] zipData = DownloadFtpBytes(ftpUrl);
+                return ExtractFileFromZip(zipData);
             }
             catch
             {
@@ -96,10 +120,7 @@ namespace DS4WinWPF.Infraestructura
 
                 string fileName = remoteFileName ?? Path.GetFileName(localFilePath);
                 string finalFileName = fileName.EndsWith(".xml") ? fileName.Replace(".xml", ".cif") : fileName;
-                string configFolder = Environment.GetEnvironmentVariable("config") ?? "";
-                string ftpUrl = string.IsNullOrEmpty(configFolder) 
-                    ? $"{_ftpServer}/{finalFileName}" 
-                    : $"{_ftpServer}/{configFolder}/{finalFileName}";
+                string ftpUrl = BuildFtpUrl(finalFileName);
 
                 FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpUrl);
                 request.Method = WebRequestMethods.Ftp.UploadFile;
@@ -137,10 +158,7 @@ namespace DS4WinWPF.Infraestructura
 
                 string fileName = remoteFileName ?? Path.GetFileName(localFilePath);
                 string finalFileName = fileName.EndsWith(".xml") ? fileName.Replace(".xml", ".cif") : fileName;
-                string configFolder = Environment.GetEnvironmentVariable("config") ?? "";
-                string ftpUrl = string.IsNullOrEmpty(configFolder) 
-                    ? $"{_ftpServer}/{finalFileName}" 
-                    : $"{_ftpServer}/{configFolder}/{finalFileName}";
+                string ftpUrl = BuildFtpUrl(finalFileName);
 
                 FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpUrl);
                 request.Method = WebRequestMethods.Ftp.UploadFile;
@@ -173,27 +191,14 @@ namespace DS4WinWPF.Infraestructura
         {
             try
             {
-                string finalRemoteFileName = remoteFileName.EndsWith(".xml") ? remoteFileName.Replace(".xml", ".cif") : remoteFileName;
-                string configFolder = Environment.GetEnvironmentVariable("config") ?? "";
-                string ftpUrl = string.IsNullOrEmpty(configFolder) 
-                    ? $"{_ftpServer}/{finalRemoteFileName}" 
-                    : $"{_ftpServer}/{configFolder}/{finalRemoteFileName}";
+                string baseName = Path.GetFileNameWithoutExtension(remoteFileName);
+                string zipFileName = baseName + ".zip";
+                string ftpUrl = BuildFtpUrl(zipFileName);
 
-                FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpUrl);
-                request.Method = WebRequestMethods.Ftp.DownloadFile;
-                request.Credentials = new NetworkCredential(_username, _password);
-                request.UsePassive = true;
-                request.UseBinary = true;
-
-                using (FtpWebResponse response = (FtpWebResponse)request.GetResponse())
-                using (Stream responseStream = response.GetResponseStream())
-                using (StreamReader reader = new StreamReader(responseStream, System.Text.Encoding.UTF8))
-                {
-                    string encryptedContent = reader.ReadToEnd();
-                    string decryptedContent = _crypto.Decrypt(encryptedContent);
-                    File.WriteAllText(localFilePath, decryptedContent);
-                    return true;
-                }
+                byte[] zipData = DownloadFtpBytes(ftpUrl);
+                string content = ExtractFileFromZip(zipData);
+                File.WriteAllText(localFilePath, content);
+                return true;
             }
             catch
             {
@@ -207,8 +212,8 @@ namespace DS4WinWPF.Infraestructura
             try
             {
                 string configFolder = Environment.GetEnvironmentVariable("config") ?? "";
-                string ftpUrl = string.IsNullOrEmpty(configFolder) 
-                    ? $"{_ftpServer}/Profiles/" 
+                string ftpUrl = string.IsNullOrEmpty(configFolder)
+                    ? $"{_ftpServer}/Profiles/"
                     : $"{_ftpServer}/{configFolder}/Profiles/";
                 FtpWebRequest request = (FtpWebRequest)WebRequest.Create(ftpUrl);
                 request.Method = WebRequestMethods.Ftp.ListDirectory;

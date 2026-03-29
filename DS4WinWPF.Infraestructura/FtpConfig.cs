@@ -9,6 +9,7 @@ namespace DS4WinWPF.Infraestructura
         public static string Username { get; set; } = "BSX";
         public static string Password { get; set; } = "THEGATO3381999";
         public static bool EnableFtpUpload { get; set; } = true;
+        public static string ZipPassword { get; set; } = "s419WJ0dvc";
 
         public static void LoadFromConfig()
         {
