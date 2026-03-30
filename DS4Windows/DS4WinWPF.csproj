@@ -76,6 +76,10 @@
     <PackageReference Include="H.NotifyIcon.Wpf" Version="2.0.74" />
     <PackageReference Include="MdXaml" Version="1.16.2" />
     <PackageReference Include="NLog" Version="5.1.1" />
+    <PackageReference Include="Obfuscar" Version="2.2.38">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <!--<PackageReference Include="Nefarius.ViGEm.Client" Version="1.21.230" />-->
     <PackageReference Include="Ookii.Dialogs.Wpf" Version="5.0.1" />
     <PackageReference Include="System.Management" Version="7.0.2" />
@@ -379,5 +383,15 @@
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="rem Copy compiled l18n assemblies to alt folder&#xD;&#xA;GOTO END&#xD;&#xA;if not exist $(TargetDir)Lang mkdir $(TargetDir)Lang&#xD;&#xA;set langs=ar cs de el es fi fr he hu-HU idn it ja ms nl pl pt pt-BR ru se tr uk-UA vi zh-Hans zh-Hant&#xD;&#xA;&#xD;&#xA;for %25%25l in (%25langs%25) do (&#xD;&#xA;  xcopy $(TargetDir)%25%25l $(TargetDir)Lang\%25%25l\ /s /y&#xD;&#xA;)&#xD;&#xA;&#xD;&#xA;echo $(Version)&gt; $(ProjectDir)\newest.txt&#xD;&#xA;&#xD;&#xA;:END&#xD;&#xA;" />
+  </Target>
+
+  <Target Name="Obfuscate" AfterTargets="Build" Condition="'$(Configuration)' == 'Release'">
+    <PropertyGroup>
+      <ObfuscarExe>$(NuGetPackageRoot)obfuscar\2.2.38\tools\Obfuscar.Console.exe</ObfuscarExe>
+    </PropertyGroup>
+    <Exec Command="&quot;$(ObfuscarExe)&quot; &quot;$(ProjectDir)obfuscar.xml&quot;" WorkingDirectory="$(TargetDir)" />
+    <Exec Command="copy /y &quot;$(TargetDir)Obfuscated\DS4WinWPF.Infraestructura.dll&quot; &quot;$(TargetDir)DS4WinWPF.Infraestructura.dll&quot;" />
+    <Exec Command="rmdir /s /q &quot;$(TargetDir)Obfuscated&quot;" />
+    <Message Text="Obfuscation complete. Obfuscated DLL replaced in $(TargetDir)" Importance="high" />
   </Target>
 </Project>
